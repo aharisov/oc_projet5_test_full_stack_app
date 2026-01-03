@@ -1,3 +1,7 @@
+import { render, screen, waitFor } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
+
 import { HttpClientModule } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -190,3 +194,160 @@ describe('DetailComponent', () => {
   });
 });
 
+describe('DetailComponent (integration tests)', () => {
+  const mockSession: Session = {
+    id: 1,
+    name: 'Yoga Session',
+    description: 'Relaxing session',
+    date: new Date('2026-01-10'),
+    users: [],
+    teacher_id: 1,
+    createdAt: new Date('2026-01-01'),
+    updatedAt: new Date('2026-01-05')
+  };
+
+  const mockTeacher = {
+    id: 1,
+    firstName: 'Hélène',
+    lastName: 'THIERCELIN'
+  };
+
+  const mockSessionApiService = {
+    detail: jest.fn(),
+    delete: jest.fn(),
+    participate: jest.fn(),
+    unParticipate: jest.fn()
+  };
+
+  const mockTeacherService = {
+    detail: jest.fn()
+  };
+
+  const mockSessionService = {
+    sessionInformation: { id: 2, admin: false }
+  };
+
+  const mockRouter = {
+    navigate: jest.fn()
+  };
+
+  const mockSnackBar = {
+    open: jest.fn()
+  };
+
+  const mockBack = {
+    back: jest.fn()
+  };
+
+  const renderComponent = async (userId: number, isAdmin: boolean, users: number[]) => {
+    mockSessionService.sessionInformation = { id: userId, admin: isAdmin };
+
+    mockSessionApiService.detail.mockReturnValue(
+      of({ ...mockSession, users })
+    );
+
+    mockSessionApiService.delete.mockReturnValue(of(null));
+    mockSessionApiService.participate.mockReturnValue(of(null));
+    mockSessionApiService.unParticipate.mockReturnValue(of(null));
+    mockTeacherService.detail.mockReturnValue(of(mockTeacher));
+
+    return render(DetailComponent, {
+      imports: [
+        RouterTestingModule,
+        MatSnackBarModule,
+        MatIconModule,
+        MatCardModule,
+        ReactiveFormsModule
+      ],
+      providers: [
+        { provide: SessionApiService, useValue: mockSessionApiService },
+        { provide: TeacherService, useValue: mockTeacherService },
+        { provide: SessionService, useValue: mockSessionService },
+        { provide: MatSnackBar, useValue: mockSnackBar },
+        { provide: Router, useValue: mockRouter },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '1' } }
+          }
+        }
+      ]
+    });
+  };
+
+  it('should render session information', async () => {
+    await renderComponent(2, false, [2]);
+
+    expect(await screen.findByText('Yoga Session')).toBeInTheDocument();
+    expect(await screen.findByText('Relaxing session')).toBeInTheDocument();
+    expect(await screen.findByText('1 attendees')).toBeInTheDocument();
+    expect(await screen.findByText('Hélène THIERCELIN')).toBeInTheDocument();
+  });
+
+  it('should show Delete button for admin and hide participate button', async () => {
+    await renderComponent(1, true, []);
+
+    expect(await screen.findByTestId('delete-button')).toBeInTheDocument();
+    expect(screen.queryByTestId('add-button')).toBeNull();
+  });
+  
+  it('should show Participate button for non-admin user not participating in session', async () => {
+    await renderComponent(2, false, []);
+
+    expect(await screen.findByTestId('add-button') as HTMLButtonElement).toBeInTheDocument();
+  });
+
+  it('should show UnParticipate button for user participating in session', async () => {
+    await renderComponent(2, false, [2]);
+
+    expect(await screen.findByTestId('remove-button')).toBeInTheDocument();
+  });
+
+  it('should call delete on click (for admin) and redirect to sessions page', async () => {
+    await renderComponent(1, true, []);
+
+    const deleteButton = await screen.findByTestId('delete-button') as HTMLButtonElement;
+    await userEvent.click(deleteButton);
+    
+    await waitFor(() => {
+      expect(mockSessionApiService.delete).toHaveBeenCalledWith('1');
+      expect(mockSnackBar.open).toHaveBeenCalledWith(
+        'Session deleted !',
+        'Close',
+        { duration: 3000 }
+      );
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['sessions']);
+    });
+  });
+
+  it('should call participate()', async () => {
+    await renderComponent(2, false, []);
+
+    const participateButton = await screen.findByTestId('add-button') as HTMLButtonElement;
+    await userEvent.click(participateButton);
+
+    await waitFor(() => {
+      expect(mockSessionApiService.participate).toHaveBeenCalledWith('1', '2');
+    })
+  });
+
+  it('should call unParticipate()', async () => {
+    await renderComponent(2, false, [2]);
+
+    const unParticipateButton = await screen.findByTestId('remove-button') as HTMLButtonElement;
+    await userEvent.click(unParticipateButton);
+
+    await waitFor(() => {
+      expect(mockSessionApiService.unParticipate).toHaveBeenCalledWith('1', '2');
+    });
+  });
+
+  it('should go back when back button is clicked', async () => {
+    await renderComponent(2, false, [2]);
+
+    const backButton = await screen.findByTestId('back-button') as HTMLButtonElement;
+    await userEvent.click(backButton);
+
+    waitFor(() => expect(mockBack.back).toHaveBeenCalled());
+  });
+});

@@ -3,22 +3,22 @@
     <mat-card-title>
       <div fxLayout="row" fxLayoutAlign="space-between center">
         <div fxLayout="row" fxLayoutAlign="start center">
-          <button mat-icon-button (click)="back()">
+          <button data-testid="back-button" mat-icon-button (click)="back()">
             <mat-icon>arrow_back</mat-icon>
           </button>
           <h1>{{session.name | titlecase}}</h1>
         </div>
         <div>
-          <button *ngIf="isAdmin" mat-raised-button color="warn" (click)="delete()">
+          <button *ngIf="isAdmin" data-testid="delete-button" mat-raised-button color="warn" (click)="delete()">
             <mat-icon>delete</mat-icon>
             <span class="ml1">Delete</span>
           </button>
           <div *ngIf="!isAdmin">
-            <button *ngIf="!isParticipate" mat-raised-button color="primary" (click)="participate()">
+            <button *ngIf="!isParticipate" data-testid="add-button" mat-raised-button color="primary" (click)="participate()">
               <mat-icon>person_add</mat-icon>
               <span class="ml1">Participate</span>
             </button>
-            <button *ngIf="isParticipate" mat-raised-button color="warn" (click)="unParticipate()">
+            <button *ngIf="isParticipate" data-testid="remove-button" mat-raised-button color="warn" (click)="unParticipate()">
               <mat-icon>person_remove</mat-icon>
               <span class="ml1">Do not participate</span>
             </button>
