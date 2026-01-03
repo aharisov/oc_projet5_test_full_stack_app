@@ -1,3 +1,7 @@
+import { render, screen, waitFor } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -17,6 +21,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('FormComponent', () => {
   let component: FormComponent;
@@ -185,4 +190,164 @@ describe('FormComponent', () => {
     expect(mockSnackBar.open).toHaveBeenCalled();
     expect(mockRouter.navigate).toHaveBeenCalledWith(['sessions']);
   });
+});
+
+describe('FormComponent (integration tests)', () => {
+  const mockSessionService = {
+    sessionInformation: { id: 1, admin: true }
+  };
+
+  const mockRouter = {
+    navigate: jest.fn(),
+    url: '/sessions/create'
+  };
+
+  const mockSnackBar = {
+    open: jest.fn()
+  };
+
+  const mockTeachers = [
+    { id: 1, firstName: 'Hélène', lastName: 'THIERCELIN' }
+  ];
+
+  const mockTeacherService = {
+    all: jest.fn().mockReturnValue(of(mockTeachers))
+  };
+
+  const mockSessionApiService = {
+    create: jest.fn(),
+    update: jest.fn(),
+    detail: jest.fn()
+  };
+
+  const renderComponent = async ({
+      admin = true,
+      url = '/sessions/create',
+      session = null
+    }: {
+      admin?: boolean;
+      url?: string;
+      session?: any;
+    } = {}) => {
+    mockSessionService.sessionInformation.admin = admin;
+    mockRouter.url = url;
+
+    if (session) {
+      mockSessionApiService.detail.mockReturnValue(of(session));
+    }
+
+    return render(FormComponent, {
+      imports: [
+        ReactiveFormsModule,
+        RouterTestingModule,
+        MatCardModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatIconModule
+      ],
+      providers: [
+        { provide: SessionService, useValue: mockSessionService },
+        { provide: SessionApiService, useValue: mockSessionApiService },
+        { provide: TeacherService, useValue: mockTeacherService },
+        { provide: MatSnackBar, useValue: mockSnackBar },
+        { provide: Router, useValue: mockRouter },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => '1' } }
+          }
+        }
+      ]
+    });
+  };
+
+  it('should redirect non-admin user', async () => {
+    await renderComponent({ admin: false });
+
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/sessions']);
+  });
+
+  it('should have the ng-invalid class when input is empty', async () => {
+    await renderComponent();
+
+    const inputName = await screen.findByTestId('input-name') as HTMLInputElement;
+    await userEvent.click(inputName);
+
+    expect(inputName).toHaveClass('ng-invalid');
+  });
+
+  it('should create a session when form is valid', async () => {
+    mockSessionApiService.create.mockReturnValue(of({}));
+
+    await renderComponent();
+
+    await userEvent.type(screen.getByTestId('input-name'), 'Yoga');
+    await userEvent.type(screen.getByTestId('input-date'), '2026-01-10');
+    await userEvent.click(screen.getByRole('combobox'));
+    await userEvent.click(await screen.findByTestId('teacher-option-1')); 
+    await userEvent.type(
+      screen.getByTestId('input-descr'),
+      'Relaxing yoga session'
+    );
+
+    const submitButton = await screen.findByTestId('submit-button') as HTMLButtonElement;
+    expect(submitButton).toBeEnabled();
+
+    await userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSessionApiService.create).toHaveBeenCalled();
+      expect(mockSnackBar.open).toHaveBeenCalledWith(
+        'Session created !',
+        'Close',
+        { duration: 3000 }
+      );
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['sessions']);
+    });
+  });
+
+  it('should update session when in update mode', async () => {
+    const existingSession = {
+      id: 1,
+      name: 'Yoga',
+      date: '2026-01-10',
+      teacher_id: 1,
+      description: 'Old description'
+    };
+
+    mockSessionApiService.update.mockReturnValue(of({}));
+
+    await renderComponent({
+      url: '/sessions/update/1',
+      session: existingSession
+    });
+
+    expect(await screen.findByTestId('input-name')).toHaveValue('Yoga');
+
+    await userEvent.clear(screen.getByTestId('input-descr'));
+    await userEvent.type(
+      screen.getByTestId('input-descr'),
+      'Updated description'
+    );
+
+    const submitButton = await screen.findByTestId('submit-button') as HTMLButtonElement;
+    expect(submitButton).toBeEnabled();
+
+    await userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSessionApiService.update)
+        .toHaveBeenCalledWith('1', expect.objectContaining({
+          description: 'Updated description'
+        }));
+
+      expect(mockSnackBar.open).toHaveBeenCalledWith(
+        'Session updated !',
+        'Close',
+        { duration: 3000 }
+      );
+    });
+  });
+
 });
