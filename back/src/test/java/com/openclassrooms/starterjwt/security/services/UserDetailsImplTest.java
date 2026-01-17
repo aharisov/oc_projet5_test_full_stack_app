@@ -38,6 +38,21 @@ class UserDetailsImplTest {
     }
 
     @Test
+    void getters_shouldReturnAdminAndPassword() {
+        // GIVEN
+        UserDetailsImpl user = UserDetailsImpl.builder()
+            .id(1L)
+            .username("test@test.com")
+            .admin(true)
+            .password("secret")
+            .build();
+
+        // THEN
+        assertEquals(true, user.getAdmin());
+        assertEquals("secret", user.getPassword());
+    }
+
+    @Test
     void equals_shouldBeTrueForSameId() {
         // GIVEN
         UserDetailsImpl user1 = UserDetailsImpl.builder().id(1L).build();
