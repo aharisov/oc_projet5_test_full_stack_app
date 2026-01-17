@@ -18,7 +18,7 @@ L’objectif est de garantir une qualité optimale, conformément au plan de tes
 
 Avant de commencer, assurez-vous d’avoir installé :
 
-- Java 17
+- Java 8
 - Maven
 - Node.js et npm
 - Base de données MySQL
@@ -89,7 +89,9 @@ mvn test verify
 Clic droit sur src/main/java 
 → Run as → JUnit Test
 ou 
-→ Run as → Maven Test
+→ Run as → Maven test
+ou
+→ Run as → Maven verify
 ```
 **Si les tests SessionMapperTest et SpringBootSecurityJwtApplicationTestIT échouent, il faut :**
 - installer dans Eclipse le plugin m2e-apt ;
@@ -117,7 +119,7 @@ npm run e2e
 
 ## Génération des rapports de couverture
 ### Back-end (JaCoCo)
-- Le rapport de couverture est généré dans :
+- Le rapport de couverture (tests unitaires et d'integration) est généré dans :
 ```text
 /back/target/site/jacoco-merged/index.html
 ```
@@ -247,7 +249,7 @@ The objective is to guarantee optimal quality, in accordance with the provided t
 
 Make sure the following tools are installed:
 
-- Java 17
+- Java 8
 - Maven
 - Node.js et npm
 - MySQL database
@@ -290,7 +292,7 @@ http://localhost:8080
 ```bash
 cd /back
 mvn test
-mvn test verify
+mvn verify
 ```
 ### Front-end tests
 ```bash
