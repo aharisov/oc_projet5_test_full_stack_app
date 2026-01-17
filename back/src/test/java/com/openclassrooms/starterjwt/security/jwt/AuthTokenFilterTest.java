@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 import javax.servlet.FilterChain;
 
@@ -122,6 +123,44 @@ class AuthTokenFilterTest {
         filter.doFilter(request, response, chain);
 
         // THEN
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_shouldParseBearerHeader_whenTokenEmpty() throws Exception {
+        // GIVEN
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer ");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        FilterChain chain = mock(FilterChain.class);
+
+        when(jwtUtils.validateJwtToken("")).thenReturn(false);
+
+        // WHEN
+        filter.doFilter(request, response, chain);
+
+        // THEN
+        verify(jwtUtils).validateJwtToken("");
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_shouldIgnoreNonBearerHeader() throws Exception {
+        // GIVEN
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Token abc.def");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        FilterChain chain = mock(FilterChain.class);
+
+        // WHEN
+        filter.doFilter(request, response, chain);
+
+        // THEN
+        verify(jwtUtils, never()).validateJwtToken("abc.def");
         assertNull(SecurityContextHolder.getContext().getAuthentication());
         verify(chain).doFilter(request, response);
     }
