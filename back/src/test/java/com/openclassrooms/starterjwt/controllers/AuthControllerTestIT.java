@@ -111,6 +111,37 @@ class AuthControllerTestIT {
     }
 
     @Test
+    void authenticateUser_shouldReturnAdminFalse_whenUserMissing() throws Exception {
+        // GIVEN
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("test@test.com");
+        loginRequest.setPassword("password");
+
+        UserDetailsImpl userDetails = UserDetailsImpl.builder()
+            .id(1L)
+            .username("test@test.com")
+            .firstName("Test")
+            .lastName("Nom")
+            .admin(false)
+            .build();
+
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        when(jwtUtils.generateJwtToken(authentication)).thenReturn("jwt-token");
+        when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.empty());
+
+        // WHEN
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+            // THEN
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.admin").value(false));
+    }
+
+    @Test
     void registerUser_shouldReturnBadRequest_whenEmailTaken() throws Exception {
         // GIVEN
         SignupRequest request = new SignupRequest();
