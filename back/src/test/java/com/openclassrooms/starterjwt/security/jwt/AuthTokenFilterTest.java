@@ -3,6 +3,7 @@ package com.openclassrooms.starterjwt.security.jwt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
@@ -95,6 +96,27 @@ class AuthTokenFilterTest {
         FilterChain chain = mock(FilterChain.class);
 
         when(jwtUtils.validateJwtToken("invalid.jwt.token")).thenReturn(false);
+
+        // WHEN
+        filter.doFilter(request, response, chain);
+
+        // THEN
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(chain).doFilter(request, response);
+    }
+
+    @Test
+    void doFilterInternal_shouldHandleException_whenUserLookupFails() throws Exception {
+        // GIVEN
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer valid.jwt.token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        FilterChain chain = mock(FilterChain.class);
+
+        when(jwtUtils.validateJwtToken("valid.jwt.token")).thenReturn(true);
+        when(jwtUtils.getUserNameFromJwtToken("valid.jwt.token")).thenReturn("test@test.com");
+        doThrow(new RuntimeException("boom")).when(userDetailsService).loadUserByUsername("test@test.com");
 
         // WHEN
         filter.doFilter(request, response, chain);
