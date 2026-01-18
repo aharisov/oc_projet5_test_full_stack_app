@@ -221,14 +221,58 @@ Functions    : 97.89% ( 93/95 )
 Lines        : 95.45% ( 168/176 )
 ================================================================================
 ```
+
+## Calcul du taux de tests
+### Back-end
+Par nombre de classes de test :
+```bash
+find back/src/test/java -name "*.java" | wc -l
+find back/src/test/java -name "*TestIT.java" | wc -l
+```
+Résultat :
+
+- 7 classes de tests d’intégration
+- 23 classes de tests au total
+
+Soit un ratio de :
+
+**7 / 23 × 100 = 30,4 % de tests d’intégration**
+
+Par nombre de tests exécutés (Surefire / Failsafe) :
+```bash
+grep -R --include="*.xml" -m1 "testsuite" back/target/surefire-reports | sed -E 's/.*tests="([0-9]+)".*/\1/' | awk '{sum+=$1} END {print sum+0}'
+grep -R --include="*.xml" -m1 "testsuite" back/target/failsafe-reports | sed -E 's/.*tests="([0-9]+)".*/\1/' | awk '{sum+=$1} END {print sum+0}'
+```
+
+Résultat :
+
+- 93 tests unitaires
+- 41 tests d’intégration
+
+Soit un ratio de :
+
+**41 / (93 + 41) × 100 = 30,6 % de tests d’intégration**
+
+### Front-end
+Par nombre de tests exécutés :
+
+- 54 tests unitaires
+- 35 tests d’intégration
+
+Soit un ratio de :
+
+**35 / (54 + 35) × 100 = 39,3 % de tests d’intégration**
+
 ## Conformité avec le plan de test
 
 Le travail réalisé est strictement conforme au plan de test fourni :
-- respect du périmètre fonctionnel
-- couverture de code contrôlée
-- séparation claire entre tests unitaires et intégration
-- exclusion volontaire des DTO
-- automatisation complète des tests
+
+- respect du périmètre fonctionnel défini ;
+- couverture de code supérieure à 80 %, conformément aux exigences de qualité ;
+- proportion de tests d’intégration supérieure à 30 %, validée par plusieurs méthodes de calcul ;
+- séparation claire entre tests unitaires et tests d’intégration ;
+- exclusion volontaire des DTO côté back-end, conformément aux recommandations ;
+- automatisation complète de l’exécution des tests (back-end, front-end et end-to-end).
 
 # 🇬🇧 Educational Project: Testing & Quality Assurance
 (Full-Stack Developer – Java & Angular Training Program)
@@ -320,9 +364,11 @@ npm run e2e:coverage
 ```
 ## Compliance with the test plan
 
-All requirements defined in the test plan have been met:
-- functional scope fully covered
-- required coverage thresholds achieved
-- clear separation between unit and integration tests
-- DTOs intentionally excluded from back-end testing
-- fully automated test execution
+The work carried out is fully compliant with the provided test plan:
+
+- adherence to the defined functional scope;
+- code coverage exceeding 80%, in line with quality requirements;
+- integration tests representing more than 30% of the total tests, validated using multiple calculation methods;
+- clear separation between unit tests and integration tests;
+- intentional exclusion of DTOs on the back-end, in accordance with best practices;
+- full automation of test execution (back-end, front-end, and end-to-end).

@@ -88,6 +88,34 @@ class UserControllerTestIT {
     }
 
     @Test
+    void findById_shouldReturnUser_whenAdminTrue() throws Exception {
+        // GIVEN
+        User user = User.builder()
+            .id(2L)
+            .email("admin@test.com")
+            .firstName("Admin")
+            .lastName("User")
+            .password("pwd")
+            .admin(true)
+            .build();
+
+        UserDto dto = new UserDto(2L, "admin@test.com", "User", "Admin", true, null, null, null);
+
+        when(userService.findById(2L)).thenReturn(user);
+        when(userMapper.toDto(user)).thenReturn(dto);
+
+        // WHEN
+        mockMvc.perform(get("/api/user/2"))
+            // THEN
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(2))
+            .andExpect(jsonPath("$.email").value("admin@test.com"))
+            .andExpect(jsonPath("$.firstName").value("Admin"))
+            .andExpect(jsonPath("$.lastName").value("User"))
+            .andExpect(jsonPath("$.admin").value(true));
+    }
+
+    @Test
     void findById_shouldReturnNotFound_whenMissingUser() throws Exception {
         // GIVEN
         when(userService.findById(1L)).thenReturn(null);

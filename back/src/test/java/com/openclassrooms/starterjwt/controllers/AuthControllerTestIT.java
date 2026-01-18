@@ -142,6 +142,19 @@ class AuthControllerTestIT {
     }
 
     @Test
+    void authenticateUser_shouldReturnBadRequest_whenMissingFields() throws Exception {
+        // GIVEN
+        LoginRequest loginRequest = new LoginRequest();
+
+        // WHEN
+        mockMvc.perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(loginRequest)))
+            // THEN
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void registerUser_shouldReturnBadRequest_whenEmailTaken() throws Exception {
         // GIVEN
         SignupRequest request = new SignupRequest();
@@ -159,6 +172,19 @@ class AuthControllerTestIT {
             // THEN
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.message").value("Error: Email is already taken!"));
+    }
+
+    @Test
+    void registerUser_shouldReturnBadRequest_whenMissingFields() throws Exception {
+        // GIVEN
+        SignupRequest request = new SignupRequest();
+
+        // WHEN
+        mockMvc.perform(post("/api/auth/register")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+            // THEN
+            .andExpect(status().isBadRequest());
     }
 
     @Test
