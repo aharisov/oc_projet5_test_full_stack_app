@@ -171,6 +171,21 @@ class SessionControllerTestIT {
     }
 
     @Test
+    void create_shouldReturnBadRequest_whenPayloadInvalid() throws Exception {
+        // GIVEN
+        SessionDto request = new SessionDto();
+
+        // WHEN
+        mockMvc.perform(post("/api/session")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+            // THEN
+            .andExpect(status().isBadRequest());
+
+        verify(sessionService, never()).create(any(Session.class));
+    }
+
+    @Test
     void update_shouldReturnUpdatedSession() throws Exception {
         // GIVEN
         SessionDto request = new SessionDto(1L, "Yoga Updated", new Date(0), 2L, "Updated description", null, null, null);
@@ -197,6 +212,21 @@ class SessionControllerTestIT {
             .andExpect(jsonPath("$.teacher_id").value(2))
             .andExpect(jsonPath("$.description").value("Updated description"))
             .andExpect(jsonPath("$.date").exists());
+    }
+
+    @Test
+    void update_shouldReturnBadRequest_whenPayloadInvalid() throws Exception {
+        // GIVEN
+        SessionDto request = new SessionDto();
+
+        // WHEN
+        mockMvc.perform(put("/api/session/1")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+            // THEN
+            .andExpect(status().isBadRequest());
+
+        verify(sessionService, never()).update(any(Long.class), any(Session.class));
     }
 
     @Test

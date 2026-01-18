@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -121,5 +122,20 @@ class TeacherControllerTestIT {
             .andExpect(jsonPath("$[1].id").value(2))
             .andExpect(jsonPath("$[1].firstName").value("Test2"))
             .andExpect(jsonPath("$[1].lastName").value("Nom2"));
+    }
+
+    @Test
+    void findAll_shouldReturnEmptyList_whenNoTeachers() throws Exception {
+        // GIVEN
+        List<Teacher> emptyTeachers = Collections.emptyList();
+        List<TeacherDto> emptyDtos = Collections.emptyList();
+        when(teacherService.findAll()).thenReturn(emptyTeachers);
+        when(teacherMapper.toDto(emptyTeachers)).thenReturn(emptyDtos);
+
+        // WHEN
+        mockMvc.perform(get("/api/teacher"))
+            // THEN
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(0));
     }
 }
